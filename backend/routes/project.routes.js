@@ -4,7 +4,7 @@ const router = express.Router();
 const projectController = require('../controllers/project.controller');
 const { authenticateToken } = require('../middleware/auth.middleware');
 const { isAdminOrPM } = require('../middleware/role.middleware'); // Import middleware quyền
-const { isProjectMember } = require('../middleware/projectAuth.middleware');
+const { isProjectMember, isProjectOwnerOrAdmin } = require('../middleware/projectAuth.middleware');
 /**
  * @swagger
  * tags:
@@ -141,6 +141,77 @@ router.get(
     authenticateToken,
     isProjectMember,   // Phải là thành viên mới được xem
     projectController.getMembers
+);
+
+/**
+ * @swagger
+ * /projects/{projectId}:
+ *   patch:
+ *     summary: Cập nhật dự án (Chỉ Admin/Chủ dự án)
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               status:
+ *                 type: string
+ *                 example: COMPLETED
+ *     responses:
+ *       '200':
+ *         description: Cập nhật thành công.
+ *       '403':
+ *         description: Không có quyền (không phải Admin hoặc chủ dự án).
+ *       '404':
+ *         description: Dự án không tồn tại.
+ */
+router.patch(
+    '/:projectId',
+    authenticateToken,
+    isProjectOwnerOrAdmin, // 1. Phải là Admin hoặc chủ dự án
+    projectController.updateProject
+);
+
+/**
+ * @swagger
+ * /projects/{projectId}:
+ *   delete:
+ *     summary: Xóa dự án (Chỉ Admin/Chủ dự án)
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: projectId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       '200':
+ *         description: Xóa thành công.
+ *       '403':
+ *         description: Không có quyền (không phải Admin hoặc chủ dự án).
+ *       '404':
+ *         description: Dự án không tồn tại.
+ */
+router.delete(
+    '/:projectId',
+    authenticateToken,
+    isProjectOwnerOrAdmin, // 1. Phải là Admin hoặc chủ dự án
+    projectController.deleteProject
 );
 
 module.exports = router;

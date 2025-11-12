@@ -108,10 +108,67 @@ const getMembersByProjectId = async (projectId) => {
     }
 };
 
+const findById = async (projectId) => {
+    const queryText = 'SELECT * FROM projects WHERE id = $1';
+    try {
+        const { rows } = await db.query(queryText, [projectId]);
+        return rows[0];
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
+ * Cập nhật dự án
+ */
+const update = async (projectId, projectData) => {
+    // projectData: { name, description, status }
+    const fields = Object.keys(projectData);
+    const values = Object.values(projectData);
+    const setString = fields.map((field, index) => 
+        `"${field}" = $${index + 2}`
+    ).join(', ');
+
+    const queryText = `
+        UPDATE projects
+        SET ${setString}
+        WHERE id = $1
+        RETURNING *
+    `;
+    
+    try {
+        const { rows } = await db.query(queryText, [projectId, ...values]);
+        return rows[0];
+    } catch (error) {
+        if (error.code === '23505') { // Lỗi unique (trùng project_code)
+            throw new Error('Mã dự án đã tồn tại.');
+        }
+        throw error;
+    }
+};
+
+/**
+ * Xóa dự án
+ * (Tất cả thành viên và công việc liên quan sẽ bị xóa theo
+ * nhờ 'ON DELETE CASCADE' trong DDL)
+ */
+const deleteById = async (projectId) => {
+    const queryText = 'DELETE FROM projects WHERE id = $1 RETURNING *';
+    try {
+        const { rows } = await db.query(queryText, [projectId]);
+        return rows[0];
+    } catch (error) {
+        throw error;
+    }
+};
+
 // Cập nhật module.exports ở cuối file
 module.exports = {
     create,
     findProjectsByUserId,
-    addMember,               // <-- Thêm dòng này
-    getMembersByProjectId,   // <-- Thêm dòng này
+    addMember,
+    getMembersByProjectId,
+    findById,     // <-- Thêm dòng này
+    update,       // <-- Thêm dòng này
+    deleteById,   // <-- Thêm dòng này
 };

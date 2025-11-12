@@ -62,7 +62,61 @@ const getTasksForProject = async (projectId) => {
     return taskTree;
 };
 
+/**
+ * Cập nhật công việc
+ */
+const updateTask = async (taskId, taskData, isAssigneeOnly) => {
+    let allowedUpdates = taskData;
+
+    // Nếu người dùng chỉ là Assignee (MEMBER)
+    if (isAssigneeOnly) {
+        // Họ chỉ được phép cập nhật một số trường nhất định
+        const allowedFields = ['status', 'priority']; // Ví dụ: chỉ cho đổi status/priority
+        
+        const restrictedUpdates = {};
+        for (const field of allowedFields) {
+            if (taskData.hasOwnProperty(field)) {
+                restrictedUpdates[field] = taskData[field];
+            }
+        }
+        
+        if (Object.keys(restrictedUpdates).length === 0) {
+            throw new Error('Bạn chỉ có quyền cập nhật trạng thái hoặc độ ưu tiên.');
+        }
+        allowedUpdates = restrictedUpdates;
+    }
+    
+    // Nếu là PM/Admin (isAssigneeOnly = false), họ được update toàn bộ taskData
+
+    try {
+        const updatedTask = await taskModel.update(taskId, allowedUpdates);
+        if (!updatedTask) {
+            throw new Error('Công việc không tồn tại.');
+        }
+        return updatedTask;
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
+ * Xóa công việc
+ */
+const deleteTask = async (taskId) => {
+    try {
+        const deletedTask = await taskModel.deleteById(taskId);
+        if (!deletedTask) {
+            throw new Error('Công việc không tồn tại.');
+        }
+        return deletedTask;
+    } catch (error) {
+        throw error;
+    }
+};
+
 module.exports = {
     createTask,
     getTasksForProject,
+    updateTask, 
+    deleteTask,  
 };

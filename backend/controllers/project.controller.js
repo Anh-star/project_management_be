@@ -65,10 +65,51 @@ const getMembers = async (req, res) => {
     }
 };
 
+/**
+ * Controller cập nhật dự án
+ */
+const updateProject = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const projectData = req.body; // { name, description, status }
+        
+        const updatedProject = await projectService.updateProject(projectId, projectData);
+        res.status(200).json(updatedProject);
+        
+    } catch (error) {
+        if (error.message.includes('không tồn tại')) {
+            return res.status(404).json({ message: error.message });
+        }
+        if (error.message.includes('Mã dự án')) { // Lỗi unique
+            return res.status(400).json({ message: error.message });
+        }
+        res.status(500).json({ message: 'Lỗi server khi cập nhật dự án.' });
+    }
+};
+
+/**
+ * Controller xóa dự án
+ */
+const deleteProject = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        await projectService.deleteProject(projectId);
+        res.status(200).json({ message: 'Xóa dự án thành công.' });
+    } catch (error) {
+        if (error.message.includes('không tồn tại')) {
+            return res.status(404).json({ message: error.message });
+        }
+        res.status(500).json({ message: 'Lỗi server khi xóa dự án.' });
+    }
+};
+
+
 // Cập nhật module.exports ở cuối file
 module.exports = {
     createProject,
     getMyProjects,
-    addMember,     // <-- Thêm dòng này
-    getMembers,    // <-- Thêm dòng này
+    addMember,
+    getMembers,
+    updateProject, // <-- Thêm dòng này
+    deleteProject, // <-- Thêm dòng này
 };

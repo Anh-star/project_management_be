@@ -6,6 +6,7 @@ const router = express.Router();
 const authRoutes = require('./auth.routes');
 const projectRoutes = require('./project.routes');
 const taskRoutes = require('./task.routes');
+const dashboardRoutes = require('./dashboard.routes');
 
 // Router test sức khỏe
 router.get('/health', (req, res) => {
@@ -20,4 +21,5 @@ router.use('/projects', projectRoutes);
 // const projectRoutes = require('./project.routes');
 // router.use('/projects', projectRoutes);
 router.use('/projects/:projectId/tasks', taskRoutes);
+router.use('/dashboard', dashboardRoutes);
 module.exports = router;

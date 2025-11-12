@@ -49,9 +49,48 @@ const getProjectMembers = async (projectId) => {
         throw error;
     }
 };
+
+/**
+ * Cập nhật dự án
+ */
+const updateProject = async (projectId, projectData) => {
+    try {
+        // Không cho phép cập nhật 'project_code' hoặc 'created_by'
+        delete projectData.project_code;
+        delete projectData.created_by;
+        
+        const updatedProject = await projectModel.update(projectId, projectData);
+        if (!updatedProject) {
+            throw new Error('Dự án không tồn tại.');
+        }
+        return updatedProject;
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
+ * Xóa dự án
+ */
+const deleteProject = async (projectId) => {
+    try {
+        const deletedProject = await projectModel.deleteById(projectId);
+        if (!deletedProject) {
+            throw new Error('Dự án không tồn tại.');
+        }
+        return deletedProject;
+    } catch (error) {
+        throw error;
+    }
+};
+
+
+// Cập nhật module.exports ở cuối file
 module.exports = {
     createProject,
     getProjectsForUser,
-    addMemberToProject, // <-- Thêm dòng này
-    getProjectMembers,  // <-- Thêm dòng này
+    addMemberToProject,
+    getProjectMembers,
+    updateProject, // <-- Thêm dòng này
+    deleteProject, // <-- Thêm dòng này
 };
