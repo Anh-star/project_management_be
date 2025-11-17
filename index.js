@@ -1,7 +1,6 @@
-// index.js (Ở thư mục gốc)
+// index.js (Phiên bản API thuần túy)
 require('dotenv').config();
 const express = require('express');
-const next = require('next');
 const cors = require('cors');
 
 // Import route tổng của API
@@ -9,40 +8,40 @@ const apiRoutes = require('./backend/routes');
 
 // Import Swagger
 const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./backend/config/swagger'); // Import file config
+const swaggerSpec = require('./backend/config/swagger');
 
-const dev = process.env.NODE_ENV !== 'production';
-const app = next({ dev }); // Khởi tạo Next.js
-const handle = app.getRequestHandler(); // Lấy handler của Next.js
+// === CẤU HÌNH MÁY CHỦ ===
+const app = express(); // Khởi tạo Express (Không còn Next.js)
+const port = process.env.PORT || 5000;
 
-const port = process.env.PORT || 3000;
+// === CẤU HÌNH CORS ===
+// Cho phép frontend (chạy trên port 3000) gọi API
+const corsOptions = {
+    origin: 'http://localhost:3000', // Chỉ cho phép port 3000
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 
-app.prepare().then(() => {
-    const server = express(); // Khởi tạo Express
+// === MIDDLEWARES ===
+app.use(express.json()); // Đọc body dạng JSON
+app.use(express.urlencoded({ extended: true }));
 
-    // Middlewares cho Express
-    server.use(cors()); // Cho phép cross-origin
-    server.use(express.json()); // Đọc body dạng JSON
-    server.use(express.urlencoded({ extended: true }));
+// === ROUTES ===
 
-    // === PHỤC VỤ SWAGGER ===
-    // Tạo endpoint /api-docs để hiển thị tài liệu API
-    server.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Phục vụ Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-    // === ĐỊNH TUYẾN API CHO BACKEND ===
-    // Tất cả API backend sẽ có tiền tố /api/v1
-    server.use('/api/v1', apiRoutes);
+// Gắn API routes
+app.use('/api/v1', apiRoutes);
 
-    // === XỬ LÝ CHO FRONTEND (Next.js) ===
-    // Cho tất cả các route còn lại, để Next.js xử lý
-    server.use((req, res) => {
-        return handle(req, res);
-    });
+// Route cơ sở
+app.get('/', (req, res) => {
+    res.send('Project Management API is running. Go to /api-docs for documentation.');
+});
 
-    // Khởi chạy server
-    server.listen(port, (err) => {
-        if (err) throw err;
-        console.log(`> Server sẵn sàng tại http://localhost:${port}`);
-        console.log(`> API Docs sẵn sàng tại http://localhost:${port}/api-docs`);
-    });
+// === KHỞI CHẠY SERVER ===
+app.listen(port, (err) => {
+    if (err) throw err;
+    console.log(`> API Server sẵn sàng tại http://localhost:${port}`);
+    console.log(`> API Docs sẵn sàng tại http://localhost:${port}/api-docs`);
 });
