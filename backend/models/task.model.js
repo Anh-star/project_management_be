@@ -62,8 +62,71 @@ const findByProjectId = async (projectId) => {
         throw error;
     }
 };
+/**
+ * Tìm một công việc bằng ID của nó
+ */
+const findById = async (taskId) => {
+    const queryText = 'SELECT * FROM tasks WHERE id = $1';
+    try {
+        const { rows } = await db.query(queryText, [taskId]);
+        return rows[0]; // Trả về task hoặc undefined
+    } catch (error) {
+        throw error;
+    }
+};
 
+/**
+ * Cập nhật một công việc
+ */
+const update = async (taskId, updates) => {
+    // updates là một object, ví dụ: { title: 'New Title', status: 'DONE' }
+    
+    // Tự động tạo chuỗi query SET
+    const fields = Object.keys(updates);
+    const values = Object.values(updates);
+    // Tạo chuỗi "title" = $1, "status" = $2, ...
+    const setString = fields.map((field, index) => 
+        `"${field}" = $${index + 2}`
+    ).join(', ');
+
+    const queryText = `
+        UPDATE tasks
+        SET ${setString}
+        WHERE id = $1
+        RETURNING *
+    `;
+    
+    try {
+        const { rows } = await db.query(queryText, [taskId, ...values]);
+        return rows[0];
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
+ * Xóa một công việc
+ */
+const deleteById = async (taskId) => {
+    // LƯU Ý: Do ràng buộc khóa ngoại, nếu bạn xóa một task cha,
+    // các task con sẽ có parent_id = NULL (như chúng ta đã set)
+    // Nếu muốn xóa cả cây, logic sẽ phức tạp hơn.
+    
+    const queryText = 'DELETE FROM tasks WHERE id = $1 RETURNING *';
+    try {
+        const { rows } = await db.query(queryText, [taskId]);
+        return rows[0]; // Trả về task đã xóa
+    } catch (error) {
+        throw error;
+    }
+};
+
+
+// Cập nhật module.exports ở cuối file
 module.exports = {
     create,
     findByProjectId,
+    findById,
+    update,
+    deleteById,
 };
