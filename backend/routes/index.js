@@ -7,7 +7,7 @@ const authRoutes = require('./auth.routes');
 const projectRoutes = require('./project.routes');
 const taskRoutes = require('./task.routes');
 const dashboardRoutes = require('./dashboard.routes');
-
+const userRoutes = require('./user.routes');
 // Router test sức khỏe
 router.get('/health', (req, res) => {
     res.status(200).json({ status: 'API is running!' });
@@ -22,4 +22,5 @@ router.use('/projects', projectRoutes);
 // router.use('/projects', projectRoutes);
 router.use('/projects/:projectId/tasks', taskRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/users', userRoutes);
 module.exports = router;

@@ -52,8 +52,52 @@ const findById = async (id) => {
     }
 };
 
+const findAll = async () => {
+    const queryText = 'SELECT id, username, email, role, created_at FROM users ORDER BY id ASC';
+    const { rows } = await db.query(queryText);
+    return rows;
+};
+
+/**
+ * Cập nhật thông tin user
+ */
+const update = async (userId, userData) => {
+    // userData: { username, role, password_hash (optional) }
+    const fields = Object.keys(userData);
+    const values = Object.values(userData);
+    
+    if (fields.length === 0) return null;
+
+    const setString = fields.map((field, index) => 
+        `"${field}" = $${index + 2}`
+    ).join(', ');
+
+    const queryText = `
+        UPDATE users
+        SET ${setString}
+        WHERE id = $1
+        RETURNING id, username, email, role
+    `;
+    
+    try {
+        const { rows } = await db.query(queryText, [userId, ...values]);
+        return rows[0];
+    } catch (error) {
+        throw error;
+    }
+};
+
+const deleteById = async (userId) => {
+    const queryText = 'DELETE FROM users WHERE id = $1 RETURNING id';
+    const { rows } = await db.query(queryText, [userId]);
+    return rows[0];
+};
+
 module.exports = {
     create,
     findByEmail,
     findById,
+    findAll,    
+    update,    
+    deleteById, 
 };
