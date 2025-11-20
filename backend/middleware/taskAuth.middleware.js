@@ -1,4 +1,3 @@
-// backend/middleware/taskAuth.middleware.js
 const taskModel = require('../models/task.model');
 
 /**

@@ -1,4 +1,3 @@
-// backend/middleware/auth.middleware.js
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/user.model');
 

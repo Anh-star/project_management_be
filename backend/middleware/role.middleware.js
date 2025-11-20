@@ -1,5 +1,3 @@
-// backend/middleware/role.middleware.js
-
 /**
  * Factory function để tạo middleware kiểm tra vai trò.
  * @param {Array<string>} roles - Mảng các vai trò được phép (ví dụ: ['ADMIN', 'PM'])

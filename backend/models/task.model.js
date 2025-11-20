@@ -1,4 +1,3 @@
-// backend/models/task.model.js
 const db = require('../config/db');
 
 /**

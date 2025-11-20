@@ -1,4 +1,3 @@
-// backend/services/dashboard.service.js
 const dashboardModel = require('../models/dashboard.model');
 
 /**

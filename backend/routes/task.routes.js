@@ -1,4 +1,3 @@
-// backend/routes/task.routes.js
 const express = require('express');
 // mergeParams: true để route này có thể truy cập :projectId từ route cha
 const router = express.Router({ mergeParams: true }); 

@@ -1,4 +1,3 @@
-// backend/middleware/projectAuth.middleware.js
 const db = require('../config/db');
 const projectModel = require('../models/project.model');
 /**

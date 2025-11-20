@@ -1,4 +1,3 @@
-// backend/services/project.service.js
 const projectModel = require('../models/project.model');
 const userModel = require('../models/user.model');
 

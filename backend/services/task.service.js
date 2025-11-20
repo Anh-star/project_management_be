@@ -1,4 +1,3 @@
-// backend/services/task.service.js
 const taskModel = require('../models/task.model');
 const userModel = require('../models/user.model'); // Sẽ cần để kiểm tra assignee
 

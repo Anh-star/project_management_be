@@ -1,4 +1,3 @@
-// backend/models/project.model.js
 const db = require('../config/db');
 
 /**

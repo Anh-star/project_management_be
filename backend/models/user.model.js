@@ -1,4 +1,3 @@
-// backend/models/user.model.js
 const db = require('../config/db'); // Import kết nối pool
 
 /**

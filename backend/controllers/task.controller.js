@@ -1,4 +1,3 @@
-// backend/controllers/task.controller.js
 const taskService = require('../services/task.service');
 
 const createTask = async (req, res) => {
