@@ -52,21 +52,22 @@ const create = async (projectData, createdById) => {
 /**
  * Lấy các dự án mà một user là thành viên
  */
-const findProjectsByUserId = async (userId) => {
+const findProjectsByUserId = async (userId, keyword = '') => {
+    const searchTerm = `%${keyword}%`;
     const queryText = `
-        SELECT DISTINCT p.* FROM projects p
+        SELECT DISTINCT p.*,
+        (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id) as total_tasks,
+        (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id AND t.status = 'DONE') as completed_tasks
+        FROM projects p
         JOIN project_members pm ON p.id = pm.project_id
-        WHERE pm.user_id = $1
+        WHERE pm.user_id = $1 AND (p.name ILIKE $2 OR p.project_code ILIKE $2)
         ORDER BY p.created_at DESC
     `;
-    // Dùng DISTINCT phòng trường hợp user được add nhiều lần (dù đã có PRIMARY KEY)
-    
-    try {
-        const { rows } = await db.query(queryText, [userId]);
-        return rows;
-    } catch (error) {
-        throw error;
-    }
+    const { rows } = await db.query(queryText, [userId, searchTerm]);
+    return rows.map(row => ({
+        ...row,
+        progress: row.total_tasks > 0 ? Math.round((row.completed_tasks / row.total_tasks) * 100) : 0
+    }));
 };
 
 const addMember = async (projectId, userId) => {
@@ -161,13 +162,63 @@ const deleteById = async (projectId) => {
     }
 };
 
-// Cập nhật module.exports ở cuối file
+const removeMember = async (projectId, userId) => {
+    const queryText = 'DELETE FROM project_members WHERE project_id = $1 AND user_id = $2 RETURNING *';
+    try {
+        const { rows } = await db.query(queryText, [projectId, userId]);
+        return rows[0];
+    } catch (error) {
+        throw error;
+    }
+};
+
+const findAll = async (keyword = '') => {
+    const searchTerm = `%${keyword}%`;
+    // Câu query này đếm tổng task và task đã xong để tính %
+    const queryText = `
+        SELECT p.*,
+        (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id) as total_tasks,
+        (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id AND t.status = 'DONE') as completed_tasks
+        FROM projects p
+        WHERE p.name ILIKE $1 OR p.project_code ILIKE $1
+        ORDER BY p.created_at DESC
+    `;
+    const { rows } = await db.query(queryText, [searchTerm]);
+    
+    // Tính % ngay trong code JS
+    return rows.map(row => ({
+        ...row,
+        progress: row.total_tasks > 0 ? Math.round((row.completed_tasks / row.total_tasks) * 100) : 0
+    }));
+};
+
+const getProjectReport = async (projectId) => {
+    // Query này thống kê số task được giao, đã xong, và trễ hạn cho từng thành viên
+    const memberStatsQuery = `
+        SELECT u.username, u.email, u.id as user_id,
+            COUNT(t.id) as assigned_tasks,
+            COUNT(CASE WHEN t.status = 'DONE' THEN 1 END) as done_tasks,
+            COUNT(CASE WHEN t.status != 'DONE' AND t.due_date < NOW() THEN 1 END) as overdue_tasks
+        FROM users u
+        JOIN project_members pm ON u.id = pm.user_id
+        LEFT JOIN tasks t ON u.id = t.assignee_id AND t.project_id = $1
+        WHERE pm.project_id = $1
+        GROUP BY u.id, u.username, u.email
+    `;
+    
+    const { rows } = await db.query(memberStatsQuery, [projectId]);
+    return { members: rows };
+};
+// Cập nhật module.exports
 module.exports = {
     create,
     findProjectsByUserId,
+    findById,
+    update,
+    deleteById,
     addMember,
     getMembersByProjectId,
-    findById,     // <-- Thêm dòng này
-    update,       // <-- Thêm dòng này
-    deleteById,   // <-- Thêm dòng này
+    removeMember,
+    findAll,
+    getProjectReport,
 };

@@ -1,5 +1,6 @@
 const projectModel = require('../models/project.model');
 const userModel = require('../models/user.model');
+const taskModel = require('../models/task.model');
 
 const createProject = async (projectData, user) => {
     // user (req.user) được lấy từ middleware
@@ -14,13 +15,13 @@ const createProject = async (projectData, user) => {
     }
 };
 
-const getProjectsForUser = async (userId) => {
+const getProjectsForUser = async (user, keyword) => {
     try {
-        const projects = await projectModel.findProjectsByUserId(userId);
-        return projects;
-    } catch (error) {
-        throw error;
-    }
+        if (user.role === 'ADMIN') {
+            return await projectModel.findAll(keyword);
+        }
+        return await projectModel.findProjectsByUserId(user.id, keyword);
+    } catch (error) { throw error; }
 };
 
 const addMemberToProject = async (projectId, email) => {
@@ -54,7 +55,16 @@ const getProjectMembers = async (projectId) => {
  */
 const updateProject = async (projectId, projectData) => {
     try {
-        // Không cho phép cập nhật 'project_code' hoặc 'created_by'
+        // 2. LOGIC MỚI: Kiểm tra nếu user muốn chuyển sang COMPLETED
+        if (projectData.status === 'COMPLETED') {
+            const incompleteCount = await taskModel.countIncomplete(projectId);
+            
+            if (incompleteCount > 0) {
+                throw new Error(`Không thể hoàn thành dự án. Còn ${incompleteCount} công việc chưa xong.`);
+            }
+        }
+
+        // Các logic cũ (Xóa field không cho sửa)
         delete projectData.project_code;
         delete projectData.created_by;
         
@@ -67,7 +77,6 @@ const updateProject = async (projectId, projectData) => {
         throw error;
     }
 };
-
 /**
  * Xóa dự án
  */
@@ -83,13 +92,33 @@ const deleteProject = async (projectId) => {
     }
 };
 
+const removeMemberFromProject = async (projectId, userId) => {
+    // (Tùy chọn) Kiểm tra xem có phải là Project Owner không trước khi xóa (để tránh xóa nhầm chủ dự án)
+    // Nhưng logic này có thể để ở Frontend hoặc Controller check quyền
+    try {
+        const result = await projectModel.removeMember(projectId, userId);
+        if (!result) {
+            throw new Error('Thành viên không tồn tại trong dự án này.');
+        }
+        return result;
+    } catch (error) {
+        throw error;
+    }
+};
 
+const getProjectReport = async (projectId) => {
+    try {
+        return await projectModel.getProjectReport(projectId);
+    } catch (error) { throw error; }
+};
 // Cập nhật module.exports ở cuối file
 module.exports = {
     createProject,
     getProjectsForUser,
     addMemberToProject,
     getProjectMembers,
-    updateProject, // <-- Thêm dòng này
-    deleteProject, // <-- Thêm dòng này
+    updateProject,
+    deleteProject, 
+    removeMemberFromProject,
+    getProjectReport,
 };

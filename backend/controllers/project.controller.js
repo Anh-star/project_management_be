@@ -22,14 +22,11 @@ const createProject = async (req, res) => {
 
 const getMyProjects = async (req, res) => {
     try {
-        // Lấy các dự án mà user (đã login) là thành viên
-        const projects = await projectService.getProjectsForUser(req.user.id);
+        const { search } = req.query; // Lấy từ URL: /projects?search=abc
+        const projects = await projectService.getProjectsForUser(req.user, search);
         res.status(200).json(projects);
-    } catch (error) {
-        res.status(500).json({ message: 'Lỗi server khi lấy dự án.', error: error.message });
-    }
+    } catch (error) { res.status(500).json({ message: error.message }); }
 };
-
 /**
  * Controller thêm thành viên
  */
@@ -102,13 +99,30 @@ const deleteProject = async (req, res) => {
     }
 };
 
+const removeMember = async (req, res) => {
+    try {
+        const { projectId, userId } = req.params;
+        await projectService.removeMemberFromProject(projectId, userId);
+        res.status(200).json({ message: 'Đã xóa thành viên khỏi dự án.' });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
 
-// Cập nhật module.exports ở cuối file
+const getReport = async (req, res) => {
+    try {
+        const data = await projectService.getProjectReport(req.params.projectId);
+        res.status(200).json(data);
+    } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
 module.exports = {
     createProject,
     getMyProjects,
     addMember,
     getMembers,
-    updateProject, // <-- Thêm dòng này
-    deleteProject, // <-- Thêm dòng này
+    updateProject,
+    deleteProject, 
+    removeMember, 
+    getReport,
 };

@@ -6,6 +6,9 @@ const projectModel = require('../models/project.model');
  */
 const isProjectMember = async (req, res, next) => {
     try {
+        if (req.user.role === 'ADMIN') {
+            return next();
+        }
         const { projectId } = req.params;
         const userId = req.user.id; // Lấy từ authenticateToken
 

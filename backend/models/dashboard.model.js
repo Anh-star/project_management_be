@@ -1,10 +1,8 @@
+// backend/models/dashboard.model.js
 const db = require('../config/db');
 
-/**
- * Lấy thống kê cho ADMIN (Toàn bộ hệ thống)
- */
+// 1. ADMIN: Thấy tất cả
 const getAdminStats = async () => {
-    // 1. Thống kê Dự án
     const projectStatsQuery = `
         SELECT
             COUNT(*) AS total_projects,
@@ -13,7 +11,6 @@ const getAdminStats = async () => {
         FROM projects;
     `;
     
-    // 2. Thống kê Công việc
     const taskStatsQuery = `
         SELECT
             COUNT(*) AS total_tasks,
@@ -23,7 +20,6 @@ const getAdminStats = async () => {
         FROM tasks;
     `;
     
-    // Thực thi song song 2 query
     const [projectRes, taskRes] = await Promise.all([
         db.query(projectStatsQuery),
         db.query(taskStatsQuery)
@@ -36,30 +32,32 @@ const getAdminStats = async () => {
     };
 };
 
-/**
- * Lấy thống kê cho PM (Dự án do PM quản lý)
- */
+// 2. PM: Thấy dự án mình TẠO + dự án mình THAM GIA
 const getPMStats = async (pmUserId) => {
-    // 1. Thống kê Dự án (do PM này tạo)
+    // Logic cũ: WHERE created_by = $1 (Chỉ dự án mình tạo)
+    // Logic mới: Tính cả dự án mình là thành viên (JOIN project_members)
+    
     const projectStatsQuery = `
         SELECT
-            COUNT(*) AS total_projects,
-            COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) AS completed_projects,
-            COUNT(CASE WHEN status = 'IN_PROGRESS' THEN 1 END) AS in_progress_projects
-        FROM projects
-        WHERE created_by = $1;
+            COUNT(DISTINCT p.id) AS total_projects,
+            COUNT(DISTINCT CASE WHEN p.status = 'COMPLETED' THEN p.id END) AS completed_projects,
+            COUNT(DISTINCT CASE WHEN p.status = 'IN_PROGRESS' THEN p.id END) AS in_progress_projects
+        FROM projects p
+        LEFT JOIN project_members pm ON p.id = pm.project_id
+        WHERE p.created_by = $1 OR pm.user_id = $1;
     `;
     
-    // 2. Thống kê Công việc (thuộc các dự án do PM này tạo)
+    // Thống kê Task: Đếm tất cả task trong các dự án đó (PM được xem hết task của dự án)
     const taskStatsQuery = `
         SELECT
-            COUNT(t.id) AS total_tasks,
-            COUNT(CASE WHEN t.status = 'DONE' THEN 1 END) AS completed_tasks,
-            COUNT(CASE WHEN t.status = 'IN_PROGRESS' THEN 1 END) AS in_progress_tasks,
-            COUNT(CASE WHEN t.status != 'DONE' AND t.due_date < NOW() THEN 1 END) AS overdue_tasks
+            COUNT(DISTINCT t.id) AS total_tasks,
+            COUNT(DISTINCT CASE WHEN t.status = 'DONE' THEN t.id END) AS completed_tasks,
+            COUNT(DISTINCT CASE WHEN t.status = 'IN_PROGRESS' THEN t.id END) AS in_progress_tasks,
+            COUNT(DISTINCT CASE WHEN t.status != 'DONE' AND t.due_date < NOW() THEN t.id END) AS overdue_tasks
         FROM tasks t
         JOIN projects p ON t.project_id = p.id
-        WHERE p.created_by = $1;
+        LEFT JOIN project_members pm ON p.id = pm.project_id
+        WHERE p.created_by = $1 OR pm.user_id = $1;
     `;
     
     const [projectRes, taskRes] = await Promise.all([
@@ -74,11 +72,8 @@ const getPMStats = async (pmUserId) => {
     };
 };
 
-/**
- * Lấy thống kê cho MEMBER (Dự án và Công việc của Member)
- */
+// 3. MEMBER: Chỉ thấy dự án mình tham gia & Task GIAO CHO MÌNH
 const getMemberStats = async (memberUserId) => {
-    // 1. Thống kê Dự án (Member này là thành viên)
     const projectStatsQuery = `
         SELECT
             COUNT(DISTINCT p.id) AS total_projects,
@@ -89,7 +84,6 @@ const getMemberStats = async (memberUserId) => {
         WHERE pm.user_id = $1;
     `;
     
-    // 2. Thống kê Công việc (được gán cho Member này)
     const taskStatsQuery = `
         SELECT
             COUNT(*) AS total_tasks,

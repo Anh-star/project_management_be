@@ -120,6 +120,19 @@ const deleteById = async (taskId) => {
     }
 };
 
+const countIncomplete = async (projectId) => {
+    const queryText = `
+        SELECT COUNT(*) 
+        FROM tasks 
+        WHERE project_id = $1 AND status != 'DONE'
+    `;
+    try {
+        const { rows } = await db.query(queryText, [projectId]);
+        return parseInt(rows[0].count);
+    } catch (error) {
+        throw error;
+    }
+};
 
 // Cập nhật module.exports ở cuối file
 module.exports = {
@@ -128,4 +141,5 @@ module.exports = {
     findById,
     update,
     deleteById,
+    countIncomplete,
 };
