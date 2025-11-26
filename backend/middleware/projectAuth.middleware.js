@@ -73,5 +73,5 @@ const isProjectOwnerOrAdmin = async (req, res, next) => {
 // Cập nhật module.exports
 module.exports = { 
     isProjectMember,
-    isProjectOwnerOrAdmin, // <-- Thêm dòng này
+    isProjectOwnerOrAdmin,
 };

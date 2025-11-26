@@ -1,4 +1,3 @@
-// backend/models/dashboard.model.js
 const db = require('../config/db');
 
 // 1. ADMIN: Thấy tất cả
@@ -34,9 +33,6 @@ const getAdminStats = async () => {
 
 // 2. PM: Thấy dự án mình TẠO + dự án mình THAM GIA
 const getPMStats = async (pmUserId) => {
-    // Logic cũ: WHERE created_by = $1 (Chỉ dự án mình tạo)
-    // Logic mới: Tính cả dự án mình là thành viên (JOIN project_members)
-    
     const projectStatsQuery = `
         SELECT
             COUNT(DISTINCT p.id) AS total_projects,

@@ -1,41 +1,40 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
+# --- Dependencies (Thư viện) ---
 /node_modules
 /.pnp
 .pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
 
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# --- Logs (Nhật ký lỗi) ---
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# --- Environment Variables (QUAN TRỌNG: Chặn lộ mật khẩu) ---
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# vercel
-.vercel
+# --- Docker & Database (MỚI THÊM VÀO) ---
+# Chặn thư mục chứa dữ liệu PostgreSQL để không đẩy lên Git
+pgdata/
+postgres-data/
+docker-compose.override.yml
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# --- Build Outputs (Nếu bạn không muốn đẩy code frontend đã build lên) ---
+# /public/_next
+# /public/*.html
+# (Nếu bạn muốn repo chứa sẵn web để người khác tải về chạy luôn thì ĐỪNG bỏ comment phần này)
+
+# --- Next.js (Nếu có file rác của next) ---
+/.next/
+/out/
+/build
+/dist
+
+# --- System Files ---
+.DS_Store
+*.pem
+Thumbs.db

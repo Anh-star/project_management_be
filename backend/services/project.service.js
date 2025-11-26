@@ -15,13 +15,12 @@ const createProject = async (projectData, user) => {
     }
 };
 
-const getProjectsForUser = async (user, keyword) => {
+const getProjectsForUser = async (user, keyword, status) => {
     try {
-        if (user.role === 'ADMIN') {
-            return await projectModel.findAll(keyword);
-        }
-        return await projectModel.findProjectsByUserId(user.id, keyword);
-    } catch (error) { throw error; }
+        if (user.role === 'ADMIN') return await projectModel.findAll(keyword, status);
+        return await projectModel.findProjectsByUserId(user.id, keyword, status);
+    } catch (error) { 
+        throw error; }
 };
 
 const addMemberToProject = async (projectId, email) => {
@@ -111,7 +110,7 @@ const getProjectReport = async (projectId) => {
         return await projectModel.getProjectReport(projectId);
     } catch (error) { throw error; }
 };
-// Cập nhật module.exports ở cuối file
+
 module.exports = {
     createProject,
     getProjectsForUser,

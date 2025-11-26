@@ -1,31 +1,24 @@
 const dashboardModel = require('../models/dashboard.model');
+const userModel = require('../models/user.model');
 
-/**
- * Lấy dữ liệu dashboard dựa trên vai trò của user
- */
-const getDashboardData = async (user) => {
-    const { id, role } = user;
+const getDashboardData = async (user, targetUserId = null) => {
+    // Nếu là Admin và muốn xem người khác
+    if (user.role === 'ADMIN' && targetUserId) {
+        const targetUser = await userModel.findById(targetUserId);
+        if (!targetUser) throw new Error('Người dùng không tồn tại');
 
-    try {
-        switch (role) {
-            case 'ADMIN':
-                return await dashboardModel.getAdminStats();
-            
-            case 'PM':
-                return await dashboardModel.getPMStats(id);
-                
-            case 'MEMBER':
-                return await dashboardModel.getMemberStats(id);
-                
-            default:
-                throw new Error('Vai trò người dùng không xác định.');
-        }
-    } catch (error) {
-        console.error("Lỗi khi lấy dữ liệu dashboard:", error);
-        throw new Error('Không thể tải dữ liệu dashboard.');
+        // Gọi hàm thống kê tương ứng với Role của người được xem
+        if (targetUser.role === 'MEMBER') return await dashboardModel.getMemberStats(targetUserId);
+        if (targetUser.role === 'PM') return await dashboardModel.getPMStats(targetUserId);
+        if (targetUser.role === 'ADMIN') return await dashboardModel.getAdminStats(); 
+    }
+
+    switch (user.role) {
+        case 'ADMIN': return await dashboardModel.getAdminStats();
+        case 'PM': return await dashboardModel.getPMStats(user.id);
+        case 'MEMBER': return await dashboardModel.getMemberStats(user.id);
+        default: return {};
     }
 };
 
-module.exports = {
-    getDashboardData,
-};
+module.exports = { getDashboardData };

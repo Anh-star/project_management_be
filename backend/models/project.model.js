@@ -52,15 +52,19 @@ const create = async (projectData, createdById) => {
 /**
  * Lấy các dự án mà một user là thành viên
  */
-const findProjectsByUserId = async (userId, keyword = '') => {
+const findProjectsByUserId = async (userId, keyword = '', status = '') => {
     const searchTerm = `%${keyword}%`;
+    const statusCondition = status ? `AND p.status = '${status}'` : '';
+
     const queryText = `
         SELECT DISTINCT p.*,
         (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id) as total_tasks,
         (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id AND t.status = 'DONE') as completed_tasks
         FROM projects p
         JOIN project_members pm ON p.id = pm.project_id
-        WHERE pm.user_id = $1 AND (p.name ILIKE $2 OR p.project_code ILIKE $2)
+        WHERE pm.user_id = $1 
+        AND (p.name ILIKE $2 OR p.project_code ILIKE $2)
+        ${statusCondition}
         ORDER BY p.created_at DESC
     `;
     const { rows } = await db.query(queryText, [userId, searchTerm]);
@@ -172,20 +176,21 @@ const removeMember = async (projectId, userId) => {
     }
 };
 
-const findAll = async (keyword = '') => {
+const findAll = async (keyword = '', status = '') => {
     const searchTerm = `%${keyword}%`;
-    // Câu query này đếm tổng task và task đã xong để tính %
+    // Nếu status rỗng thì lấy tất cả, ngược lại lọc theo status
+    const statusCondition = status ? `AND p.status = '${status}'` : '';
+    
     const queryText = `
         SELECT p.*,
         (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id) as total_tasks,
         (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id AND t.status = 'DONE') as completed_tasks
         FROM projects p
-        WHERE p.name ILIKE $1 OR p.project_code ILIKE $1
+        WHERE (p.name ILIKE $1 OR p.project_code ILIKE $1)
+        ${statusCondition}
         ORDER BY p.created_at DESC
     `;
     const { rows } = await db.query(queryText, [searchTerm]);
-    
-    // Tính % ngay trong code JS
     return rows.map(row => ({
         ...row,
         progress: row.total_tasks > 0 ? Math.round((row.completed_tasks / row.total_tasks) * 100) : 0
@@ -209,7 +214,7 @@ const getProjectReport = async (projectId) => {
     const { rows } = await db.query(memberStatsQuery, [projectId]);
     return { members: rows };
 };
-// Cập nhật module.exports
+
 module.exports = {
     create,
     findProjectsByUserId,

@@ -1,8 +1,20 @@
 const userModel = require('../models/user.model');
 const bcrypt = require('bcryptjs');
 
-const getAllUsers = async () => {
-    return await userModel.findAll();
+const getAllUsers = async (keyword, page, limit, role) => {
+    const offset = (page - 1) * limit;
+    
+    const { users, total } = await userModel.findAll(keyword, limit, offset, role);
+    
+    return {
+        data: users,
+        pagination: {
+            page: page,
+            limit: limit,
+            total_records: total,
+            total_pages: Math.ceil(total / limit)
+        }
+    };
 };
 
 const createUser = async (userData) => {

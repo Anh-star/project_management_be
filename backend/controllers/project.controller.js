@@ -22,8 +22,8 @@ const createProject = async (req, res) => {
 
 const getMyProjects = async (req, res) => {
     try {
-        const { search } = req.query; // Lấy từ URL: /projects?search=abc
-        const projects = await projectService.getProjectsForUser(req.user, search);
+        const { search, status } = req.query; // Lấy từ URL: /projects?search=abc
+        const projects = await projectService.getProjectsForUser(req.user, search, status);
         res.status(200).json(projects);
     } catch (error) { res.status(500).json({ message: error.message }); }
 };

@@ -67,37 +67,56 @@ const getTasksForProject = async (projectId) => {
 const updateTask = async (taskId, taskData, isAssigneeOnly) => {
     let allowedUpdates = taskData;
 
-    // Nếu người dùng chỉ là Assignee (MEMBER)
+    // 1. Logic phân quyền (Giữ nguyên)
     if (isAssigneeOnly) {
-        // Họ chỉ được phép cập nhật một số trường nhất định
-        const allowedFields = ['status', 'priority']; // Ví dụ: chỉ cho đổi status/priority
-        
+        const allowedFields = ['status', 'priority'];
         const restrictedUpdates = {};
         for (const field of allowedFields) {
             if (taskData.hasOwnProperty(field)) {
                 restrictedUpdates[field] = taskData[field];
             }
         }
-        
         if (Object.keys(restrictedUpdates).length === 0) {
             throw new Error('Bạn chỉ có quyền cập nhật trạng thái hoặc độ ưu tiên.');
         }
         allowedUpdates = restrictedUpdates;
     }
-    
-    // Nếu là PM/Admin (isAssigneeOnly = false), họ được update toàn bộ taskData
+
+    // 2. Logic chặn: Không cho Task cha DONE nếu con chưa xong (Giữ nguyên từ bước trước)
+    if (allowedUpdates.status === 'DONE') {
+        const hasChildrenLeft = await taskModel.hasIncompleteChildren(taskId);
+        if (hasChildrenLeft) {
+            throw new Error('Không thể hoàn thành. Vẫn còn công việc con chưa xong.');
+        }
+    }
 
     try {
+        // 3. Thực hiện Update
         const updatedTask = await taskModel.update(taskId, allowedUpdates);
         if (!updatedTask) {
             throw new Error('Công việc không tồn tại.');
         }
+
+        // --- 4. LOGIC MỚI: TỰ ĐỘNG CẬP NHẬT TASK CHA ---
+        // Nếu task con vừa update KHÔNG phải là DONE (tức là đang làm lại)
+        // Và nó có task cha (parent_id)
+        if (updatedTask.parent_id && updatedTask.status !== 'DONE') {
+            // Kiểm tra trạng thái hiện tại của Task Cha
+            const parentTask = await taskModel.findById(updatedTask.parent_id);
+            
+            // Nếu Task Cha đang là DONE -> Đẩy về IN_PROGRESS
+            if (parentTask && parentTask.status === 'DONE') {
+                await taskModel.update(parentTask.id, { status: 'IN_PROGRESS' });
+                console.log(`Auto-reverted Parent Task #${parentTask.id} to IN_PROGRESS`);
+            }
+        }
+        // ------------------------------------------------
+
         return updatedTask;
     } catch (error) {
         throw error;
     }
 };
-
 /**
  * Xóa công việc
  */

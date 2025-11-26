@@ -39,7 +39,6 @@ const login = async (req, res) => {
     }
 };
 
-// --- DÒNG QUAN TRỌNG NHẤT LÀ DÒNG NÀY ---
 module.exports = {
     register,
     login,

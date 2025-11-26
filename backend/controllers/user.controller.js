@@ -2,8 +2,14 @@ const userService = require('../services/user.service');
 
 const getUsers = async (req, res) => {
     try {
-        const users = await userService.getAllUsers();
-        res.status(200).json(users);
+        // Lấy tham số từ URL (VD: ?page=1&search=admin)
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10; // Mặc định 10 dòng/trang
+        const search = req.query.search || '';
+        const role = req.query.role || ''; // Lấy role từ query
+
+        const result = await userService.getAllUsers(search, page, limit, role);
+        res.status(200).json(result);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

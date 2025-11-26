@@ -1,5 +1,4 @@
-const db = require('../config/db'); // Import kết nối pool
-
+const db = require('../config/db');
 /**
  * Tạo một user mới
  */
@@ -51,10 +50,37 @@ const findById = async (id) => {
     }
 };
 
-const findAll = async () => {
-    const queryText = 'SELECT id, username, email, role, created_at FROM users ORDER BY id ASC';
-    const { rows } = await db.query(queryText);
-    return rows;
+const findAll = async (keyword = '', limit = 10, offset = 0, roleFilter = '') => {
+    const searchTerm = `%${keyword}%`;
+    const roleCondition = roleFilter ? `AND role = '${roleFilter}'` : '';
+
+    const dataQuery = `
+        SELECT id, username, email, role, created_at 
+        FROM users 
+        WHERE (username ILIKE $1 OR email ILIKE $1)
+        ${roleCondition}
+        ORDER BY id ASC
+        LIMIT $2 OFFSET $3
+    `;
+    
+    const countQuery = `
+        SELECT COUNT(*) 
+        FROM users 
+        WHERE (username ILIKE $1 OR email ILIKE $1)
+        ${roleCondition}
+    `;
+
+    try {
+        const [dataRes, countRes] = await Promise.all([
+            db.query(dataQuery, [searchTerm, limit, offset]),
+            db.query(countQuery, [searchTerm])
+        ]);
+
+        return {
+            users: dataRes.rows,
+            total: parseInt(countRes.rows[0].count)
+        };
+    } catch (error) { throw error; }
 };
 
 /**

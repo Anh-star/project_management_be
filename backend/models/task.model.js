@@ -134,7 +134,21 @@ const countIncomplete = async (projectId) => {
     }
 };
 
-// Cập nhật module.exports ở cuối file
+const hasIncompleteChildren = async (parentId) => {
+    const queryText = `
+        SELECT 1 
+        FROM tasks 
+        WHERE parent_id = $1 AND status != 'DONE'
+        LIMIT 1
+    `;
+    try {
+        const { rows } = await db.query(queryText, [parentId]);
+        return rows.length > 0; // Nếu tìm thấy dòng nào -> Có task con chưa xong
+    } catch (error) {
+        throw error;
+    }
+};
+
 module.exports = {
     create,
     findByProjectId,
@@ -142,4 +156,5 @@ module.exports = {
     update,
     deleteById,
     countIncomplete,
+    hasIncompleteChildren,
 };

@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # --- SERVICE 1: DATABASE ---
+  db:
+    image: postgres:15-alpine
+    container_name: pm_db
+    restart: always
+    environment:
+      # Lấy giá trị từ file .env
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5433:5432" # Cổng ngoài 5433, trong 5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # --- SERVICE 2: APP ---
+  app:
+    build: .
+    container_name: pm_app
+    restart: always
+    ports:
+      - "80:5000" # Web chạy cổng 80
+    depends_on:
+      - db
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PORT}
+      # Kết nối DB dùng lại các biến ở trên để đảm bảo đồng bộ
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: db
+      DB_DATABASE: ${POSTGRES_DB}
+      DB_PORT: 5432
+      JWT_SECRET: ${JWT_SECRET}
+
+volumes:
+  pgdata:

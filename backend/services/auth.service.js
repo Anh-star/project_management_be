@@ -1,7 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../config/db'); // Assuming db connection is available
-
+const db = require('../config/db');
 const registerUser = async (username, email, password) => {
     const hashedPassword = await bcrypt.hash(password, 10); // Hash password with salt rounds = 10
 
@@ -47,7 +46,6 @@ const loginUser = async (email, password) => {
 const authService = {
     registerUser,
     loginUser,
-    // Other auth-related functions will go here
 };
 
 module.exports = authService;
