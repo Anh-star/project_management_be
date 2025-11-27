@@ -3,24 +3,13 @@ const userModel = require('../models/user.model');
 const taskModel = require('../models/task.model');
 
 const createProject = async (projectData, user) => {
-    // user (req.user) được lấy từ middleware
-    // projectData (req.body) được lấy từ controller
-    
-    try {
-        const newProject = await projectModel.create(projectData, user.id);
-        return newProject;
-    } catch (error) {
-        // Ném lỗi lên controller để xử lý
-        throw error;
-    }
+    const { manager_ids } = projectData; 
+    return await projectModel.create(projectData, user.id, manager_ids);
 };
 
 const getProjectsForUser = async (user, keyword, status) => {
-    try {
-        if (user.role === 'ADMIN') return await projectModel.findAll(keyword, status);
-        return await projectModel.findProjectsByUserId(user.id, keyword, status);
-    } catch (error) { 
-        throw error; }
+    if (user.role === 'ADMIN') return await projectModel.findAll(keyword, status);
+    return await projectModel.findProjectsByUserId(user.id, keyword, status);
 };
 
 const addMemberToProject = async (projectId, email) => {
@@ -52,29 +41,22 @@ const getProjectMembers = async (projectId) => {
 /**
  * Cập nhật dự án
  */
-const updateProject = async (projectId, projectData) => {
-    try {
-        // 2. LOGIC MỚI: Kiểm tra nếu user muốn chuyển sang COMPLETED
-        if (projectData.status === 'COMPLETED') {
-            const incompleteCount = await taskModel.countIncomplete(projectId);
-            
-            if (incompleteCount > 0) {
-                throw new Error(`Không thể hoàn thành dự án. Còn ${incompleteCount} công việc chưa xong.`);
-            }
+const updateProject = async (id, projectData) => {
+    if (projectData.status === 'COMPLETED') {
+        const incompleteCount = await taskModel.countIncomplete(id);
+        if (incompleteCount > 0) {
+            throw new Error(`Không thể hoàn thành. Còn ${incompleteCount} công việc chưa xong.`);
         }
-
-        // Các logic cũ (Xóa field không cho sửa)
-        delete projectData.project_code;
-        delete projectData.created_by;
-        
-        const updatedProject = await projectModel.update(projectId, projectData);
-        if (!updatedProject) {
-            throw new Error('Dự án không tồn tại.');
-        }
-        return updatedProject;
-    } catch (error) {
-        throw error;
     }
+
+    const { manager_ids } = projectData;
+    delete projectData.project_code;
+    delete projectData.created_by;
+    delete projectData.manager_ids;
+    
+    const updated = await projectModel.update(id, projectData, manager_ids);
+    if (!updated) throw new Error('Dự án không tồn tại.');
+    return updated;
 };
 /**
  * Xóa dự án
@@ -111,6 +93,10 @@ const getProjectReport = async (projectId) => {
     } catch (error) { throw error; }
 };
 
+const updateMemberManagerStatus = async (projectId, userId, isManager) => {
+    return await projectModel.updateMemberRole(projectId, userId, isManager);
+};
+
 module.exports = {
     createProject,
     getProjectsForUser,
@@ -120,4 +106,5 @@ module.exports = {
     deleteProject, 
     removeMemberFromProject,
     getProjectReport,
+    updateMemberManagerStatus,
 };
