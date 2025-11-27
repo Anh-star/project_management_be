@@ -48,14 +48,29 @@ const create = async (taskData) => {
 /**
  * Lấy tất cả công việc (dạng phẳng) của một dự án
  */
-const findByProjectId = async (projectId) => {
-    const queryText = `
-        SELECT * FROM tasks 
-        WHERE project_id = $1
-        ORDER BY created_at ASC
-    `;
+const findByProjectId = async (projectId, priority = '', status = '') => {
+    let queryText = `SELECT * FROM tasks WHERE project_id = $1`;
+    const params = [projectId];
+    let paramIndex = 2; // Bắt đầu từ $2
+
+    // Lọc Priority
+    if (priority) {
+        queryText += ` AND priority = $${paramIndex}`;
+        params.push(priority);
+        paramIndex++;
+    }
+
+    // Lọc Status (Mới thêm)
+    if (status) {
+        queryText += ` AND status = $${paramIndex}`;
+        params.push(status);
+        paramIndex++;
+    }
+
+    queryText += ` ORDER BY created_at ASC`;
+
     try {
-        const { rows } = await db.query(queryText, [projectId]);
+        const { rows } = await db.query(queryText, params);
         return rows;
     } catch (error) {
         throw error;

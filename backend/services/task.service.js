@@ -33,34 +33,32 @@ const createTask = async (projectId, taskData, user) => {
 /**
  * Lấy cây công việc của dự án
  */
-const getTasksForProject = async (projectId) => {
-    // 1. Lấy danh sách phẳng (flat list)
-    const tasks = await taskModel.findByProjectId(projectId);
+const getTasksForProject = async (projectId, priority = '', status = '') => {
+    // 1. Gọi Model với cả 2 tham số lọc
+    const tasks = await taskModel.findByProjectId(projectId, priority, status);
     
-    // 2. Hàm đệ quy để xây dựng cây
+    // 2. Nếu có BẤT KỲ bộ lọc nào (priority HOẶC status) -> Trả về danh sách phẳng (Flat)
+    // Vì nếu hiển thị cây, việc cha bị lọc mất sẽ làm mất luôn việc con
+    if (priority || status) {
+        return tasks; 
+    }
+
+    // 3. Nếu không lọc -> Xây dựng cây
     const buildTree = (tasksList, parentId = null) => {
         const tree = [];
-        
-        // Lọc ra các công việc con của parentId hiện tại
         const children = tasksList.filter(task => task.parent_id === parentId);
-        
         for (const child of children) {
-            // Tìm các công việc con của (child)
             const subTasks = buildTree(tasksList, child.id);
             if (subTasks.length > 0) {
-                child.subTasks = subTasks; // Gán mảng con vào
+                child.subTasks = subTasks;
             }
             tree.push(child);
         }
-        
         return tree;
     };
 
-    // 3. Bắt đầu xây dựng cây từ cấp cao nhất (parent_id = null)
-    const taskTree = buildTree(tasks);
-    return taskTree;
+    return buildTree(tasks);
 };
-
 /**
  * Cập nhật công việc
  */

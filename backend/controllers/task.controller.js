@@ -22,14 +22,11 @@ const createTask = async (req, res) => {
 const getProjectTasks = async (req, res) => {
     try {
         const { projectId } = req.params;
-        
-        // Service sẽ trả về dạng cây
-        const taskTree = await taskService.getTasksForProject(projectId);
-        
-        res.status(200).json(taskTree);
-
+        const { priority, status } = req.query; 
+        const tasks = await taskService.getTasksForProject(projectId, priority, status);
+        res.status(200).json(tasks);
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server khi lấy công việc.', error: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
 
