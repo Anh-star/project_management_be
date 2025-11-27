@@ -14,17 +14,38 @@ const createTask = async (projectId, taskData, user) => {
         }
     }
 
+    // Nếu đang tạo Task Con (có parent_id)
+    if (taskData.parent_id) {
+        const parentTask = await taskModel.findById(taskData.parent_id);
+        
+        // Nếu Task Cha đang là DONE -> Đẩy về IN_PROGRESS
+        if (parentTask && parentTask.status === 'DONE') {
+            await taskModel.update(parentTask.id, { status: 'IN_PROGRESS' });
+            console.log(`Auto-reverted Parent Task #${parentTask.id} to IN_PROGRESS (New subtask added)`);
+            
+            // (Tùy chọn) Gửi thông báo cho người phụ trách Task Cha biết
+            if (parentTask.assignee_id) {
+                await notiModel.create({
+                    user_id: parentTask.assignee_id,
+                    title: '🔄 Công việc mở lại',
+                    message: `Công việc "${parentTask.title}" đã chuyển về IN_PROGRESS do có việc con mới được thêm vào.`,
+                    type: 'STATUS'
+                });
+            }
+        }
+    }
+    // -------------------------------------------
+
     const fullTaskData = {
         ...taskData,
         projectId: projectId,
-        created_by: user.id, // user là người tạo (PM/Admin)
+        created_by: user.id,
     };
 
     try {
         const newTask = await taskModel.create(fullTaskData);
 
-        // --- GỬI THÔNG BÁO: KHI ĐƯỢC GIAO VIỆC ---
-        // Nếu có người được giao và người đó không phải là chính mình
+        // Gửi thông báo khi được giao việc
         if (newTask.assignee_id && newTask.assignee_id !== user.id) {
             await notiModel.create({
                 user_id: newTask.assignee_id,

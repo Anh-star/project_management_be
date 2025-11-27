@@ -66,20 +66,30 @@ const getMembers = async (req, res) => {
  */
 const updateProject = async (req, res) => {
     try {
-        const { projectId } = req.params;
-        const projectData = req.body; // { name, description, status }
-        
-        const updatedProject = await projectService.updateProject(projectId, projectData);
-        res.status(200).json(updatedProject);
-        
+        const updated = await projectService.updateProject(req.params.projectId, req.body);
+        res.status(200).json(updated);
     } catch (error) {
+        // In lỗi ra console backend để kiểm tra xem nội dung chính xác là gì
+        console.log("Update Project Logic Error:", error.message);
+
+        // 1. Lỗi không tìm thấy
         if (error.message.includes('không tồn tại')) {
             return res.status(404).json({ message: error.message });
         }
-        if (error.message.includes('Mã dự án')) { // Lỗi unique
+
+        // 2. Lỗi Validate (Mã trùng, hoặc logic chặn hoàn thành)
+        // Sửa điều kiện thoáng hơn: Chặn tất cả lỗi bắt đầu bằng "Không thể" hoặc chứa "Mã dự án"
+        if (
+            error.message.includes('Mã dự án') || 
+            error.message.includes('Không thể') || 
+            error.message.includes('chưa xong') ||
+            error.message.includes('chưa xử lý')
+        ) {
             return res.status(400).json({ message: error.message });
         }
-        res.status(500).json({ message: 'Lỗi server khi cập nhật dự án.' });
+
+        // 3. Lỗi hệ thống thực sự (DB chết, code lỗi...)
+        res.status(500).json({ message: 'Lỗi server khi cập nhật dự án.', error: error.message });
     }
 };
 
@@ -116,6 +126,17 @@ const getReport = async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
+const updateMemberRole = async (req, res) => {
+    try {
+        const { projectId, userId } = req.params;
+        const { is_manager } = req.body; // Nhận boolean từ body
+        await projectService.updateMemberManagerStatus(projectId, userId, is_manager);
+        res.status(200).json({ message: 'Cập nhật quyền thành công.' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     createProject,
     getMyProjects,
@@ -125,4 +146,5 @@ module.exports = {
     deleteProject, 
     removeMember, 
     getReport,
+    updateMemberRole,
 };
