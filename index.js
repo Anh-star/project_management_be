@@ -4,7 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-
+const notificationModel = require('./backend/models/notification.model');
 // Import API
 const apiRoutes = require('./backend/routes');
 const swaggerUi = require('swagger-ui-express');
@@ -96,6 +96,22 @@ app.get(/.*/, (req, res) => {
         res.status(404).send('404 Not Found');
     }
 });
+
+// --- CRON JOB KIỂM TRA QUÁ HẠN (Chạy mỗi 60 giây) ---
+setInterval(() => {
+    // console.log('Running cron: Check overdue tasks...'); // Có thể comment dòng log này cho đỡ rối
+    notificationModel.checkOverdueTasks();
+}, 60000);
+
+// --- CRON JOB 2: DỌN DẸP THÔNG BÁO CŨ (Chạy mỗi 24 giờ) ---
+// 24 giờ * 60 phút * 60 giây * 1000 mili-giây
+setInterval(() => {
+    console.log('Running cron: Cleanup old notifications...');
+    notificationModel.deleteOldNotifications();
+}, 24 * 60 * 60 * 1000);
+
+// Gọi ngay 1 lần khi khởi động server để dọn dẹp luôn
+notificationModel.deleteOldNotifications();
 
 app.listen(port, (err) => {
     if (err) throw err;
