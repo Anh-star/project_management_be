@@ -58,10 +58,28 @@ const updateProject = async (id, projectData) => {
 };
 
 const deleteProject = async (id) => await projectModel.deleteById(id);
-const addMemberToProject = async (pid, email) => {
-  const u = await userModel.findByEmail(email);
-  if (!u) throw new Error("Email không tồn tại");
-  return await projectModel.addMember(pid, u.id);
+const addMemberToProject = async (projectId, email) => {
+  const user = await userModel.findByEmail(email);
+  if (!user) throw new Error("Người dùng với email này không tồn tại.");
+
+  try {
+    const result = await projectModel.addMember(projectId, user.id);
+
+    // GỬI THÔNG BÁO CHO THÀNH VIÊN MỚI
+    const project = await projectModel.findById(projectId); // Lấy tên dự án
+    if (project) {
+      await notiModel.create({
+        user_id: user.id,
+        title: "🎉 Chào mừng bạn!",
+        message: `Bạn đã được thêm vào dự án "${project.name}". Hãy kiểm tra ngay!`,
+        type: "ASSIGN", // Dùng type ASSIGN để hiện icon xanh lá
+      });
+    }
+
+    return result;
+  } catch (error) {
+    throw error;
+  }
 };
 const getProjectMembers = async (pid) =>
   await projectModel.getMembersByProjectId(pid);
