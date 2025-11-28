@@ -1,110 +1,85 @@
-const projectModel = require('../models/project.model');
-const userModel = require('../models/user.model');
-const taskModel = require('../models/task.model');
+const projectModel = require("../models/project.model");
+const userModel = require("../models/user.model");
+const taskModel = require("../models/task.model");
+const notiModel = require("../models/notification.model");
 
 const createProject = async (projectData, user) => {
-    const { manager_ids } = projectData; 
-    return await projectModel.create(projectData, user.id, manager_ids);
+  const { manager_ids } = projectData;
+  return await projectModel.create(projectData, user.id, manager_ids);
 };
 
 const getProjectsForUser = async (user, keyword, status) => {
-    if (user.role === 'ADMIN') return await projectModel.findAll(keyword, status);
-    return await projectModel.findProjectsByUserId(user.id, keyword, status);
+  if (user.role === "ADMIN") return await projectModel.findAll(keyword, status);
+  return await projectModel.findProjectsByUserId(user.id, keyword, status);
 };
 
-const addMemberToProject = async (projectId, email) => {
-    // 1. Tìm user bằng email
-    const user = await userModel.findByEmail(email);
-    if (!user) {
-        throw new Error('Người dùng với email này không tồn tại.');
-    }
-
-    // 2. Thêm user ID vào dự án
-    try {
-        const result = await projectModel.addMember(projectId, user.id);
-        return result;
-    } catch (error) {
-        // Ném lỗi (ví dụ: "Người dùng đã ở trong dự án") lên controller
-        throw error;
-    }
-};
-
-const getProjectMembers = async (projectId) => {
-    try {
-        const members = await projectModel.getMembersByProjectId(projectId);
-        return members;
-    } catch (error) {
-        throw error;
-    }
-};
-
-/**
- * Cập nhật dự án
- */
 const updateProject = async (id, projectData) => {
-    if (projectData.status === 'COMPLETED') {
-        const incompleteCount = await taskModel.countIncomplete(id);
-        if (incompleteCount > 0) {
-            throw new Error(`Không thể hoàn thành. Còn ${incompleteCount} công việc chưa xong.`);
-        }
+  if (projectData.status === "COMPLETED") {
+    const incompleteCount = await taskModel.countIncomplete(id);
+    if (incompleteCount > 0) {
+      throw new Error(
+        `Không thể hoàn thành dự án! Vẫn còn ${incompleteCount} công việc chưa xử lý xong (Trạng thái khác Done).`
+      );
     }
+  }
 
-    const { manager_ids } = projectData;
-    delete projectData.project_code;
-    delete projectData.created_by;
-    delete projectData.manager_ids;
-    
-    const updated = await projectModel.update(id, projectData, manager_ids);
-    if (!updated) throw new Error('Dự án không tồn tại.');
-    return updated;
-};
-/**
- * Xóa dự án
- */
-const deleteProject = async (projectId) => {
+  const { manager_ids } = projectData;
+  delete projectData.project_code;
+  delete projectData.created_by;
+  delete projectData.manager_ids;
+
+  const updated = await projectModel.update(id, projectData, manager_ids);
+  if (!updated) throw new Error("Dự án không tồn tại.");
+
+  // GỬI THÔNG BÁO HOÀN THÀNH DỰ ÁN
+  if (projectData.status === "COMPLETED") {
     try {
-        const deletedProject = await projectModel.deleteById(projectId);
-        if (!deletedProject) {
-            throw new Error('Dự án không tồn tại.');
-        }
-        return deletedProject;
-    } catch (error) {
-        throw error;
+      // 1. Lấy danh sách thành viên
+      const members = await projectModel.getMembersByProjectId(id);
+
+      // 2. Gửi thông báo cho từng người
+      // Dùng Promise.all để gửi song song cho nhanh
+      await Promise.all(
+        members.map((member) => {
+          return notiModel.create({
+            user_id: member.id,
+            title: "🏆 Dự án hoàn thành!",
+            message: `Dự án "${updated.name}" đã chính thức hoàn thành. Cảm ơn đóng góp của bạn!`,
+            type: "STATUS", // Hoặc thêm type 'PROJECT' nếu muốn icon riêng
+          });
+        })
+      );
+    } catch (err) {
+      console.error("Lỗi gửi thông báo dự án hoàn thành:", err);
+      // Không throw error để tránh rollback việc update dự án
     }
+  }
+  return updated;
 };
 
-const removeMemberFromProject = async (projectId, userId) => {
-    // (Tùy chọn) Kiểm tra xem có phải là Project Owner không trước khi xóa (để tránh xóa nhầm chủ dự án)
-    // Nhưng logic này có thể để ở Frontend hoặc Controller check quyền
-    try {
-        const result = await projectModel.removeMember(projectId, userId);
-        if (!result) {
-            throw new Error('Thành viên không tồn tại trong dự án này.');
-        }
-        return result;
-    } catch (error) {
-        throw error;
-    }
+const deleteProject = async (id) => await projectModel.deleteById(id);
+const addMemberToProject = async (pid, email) => {
+  const u = await userModel.findByEmail(email);
+  if (!u) throw new Error("Email không tồn tại");
+  return await projectModel.addMember(pid, u.id);
 };
-
-const getProjectReport = async (projectId) => {
-    try {
-        return await projectModel.getProjectReport(projectId);
-    } catch (error) { throw error; }
-};
-
-const updateMemberManagerStatus = async (projectId, userId, isManager) => {
-    return await projectModel.updateMemberRole(projectId, userId, isManager);
-};
+const getProjectMembers = async (pid) =>
+  await projectModel.getMembersByProjectId(pid);
+const removeMemberFromProject = async (pid, uid) =>
+  await projectModel.removeMember(pid, uid);
+const updateMemberManagerStatus = async (pid, uid, isManager) =>
+  await projectModel.updateMemberRole(pid, uid, isManager);
+const getProjectReport = async (pid) =>
+  await projectModel.getProjectReport(pid);
 
 module.exports = {
-    createProject,
-    getProjectsForUser,
-    addMemberToProject,
-    getProjectMembers,
-    updateProject,
-    deleteProject, 
-    removeMemberFromProject,
-    getProjectReport,
-    updateMemberManagerStatus,
+  createProject,
+  getProjectsForUser,
+  updateProject,
+  deleteProject,
+  addMemberToProject,
+  getProjectMembers,
+  removeMemberFromProject,
+  updateMemberManagerStatus,
+  getProjectReport,
 };

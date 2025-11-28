@@ -1,9 +1,12 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const projectController = require('../controllers/project.controller');
-const { authenticateToken } = require('../middleware/auth.middleware');
-const { isAdminOrPM } = require('../middleware/role.middleware');
-const { isProjectMember, isProjectManagerOrAdmin } = require('../middleware/projectAuth.middleware');
+const projectController = require("../controllers/project.controller");
+const { authenticateToken } = require("../middleware/auth.middleware");
+const { isAdminOrPM } = require("../middleware/role.middleware");
+const {
+  isProjectMember,
+  isProjectManagerOrAdmin,
+} = require("../middleware/projectAuth.middleware");
 
 /**
  * @swagger
@@ -42,10 +45,10 @@ const { isProjectMember, isProjectManagerOrAdmin } = require('../middleware/proj
  *         description: Tạo thành công.
  */
 router.post(
-    '/',
-    authenticateToken,
-    isAdminOrPM,
-    projectController.createProject
+  "/",
+  authenticateToken,
+  isAdminOrPM,
+  projectController.createProject
 );
 
 /**
@@ -71,11 +74,7 @@ router.post(
  *       '200':
  *         description: Danh sách dự án.
  */
-router.get(
-    '/',
-    authenticateToken,
-    projectController.getMyProjects
-);
+router.get("/", authenticateToken, projectController.getMyProjects);
 
 /**
  * @swagger
@@ -108,10 +107,10 @@ router.get(
  *         description: Cập nhật thành công.
  */
 router.patch(
-    '/:projectId',
-    authenticateToken,
-    isProjectManagerOrAdmin,
-    projectController.updateProject
+  "/:projectId",
+  authenticateToken,
+  isProjectManagerOrAdmin,
+  projectController.updateProject
 );
 
 /**
@@ -133,10 +132,10 @@ router.patch(
  *         description: Xóa thành công.
  */
 router.delete(
-    '/:projectId',
-    authenticateToken,
-    isProjectManagerOrAdmin,
-    projectController.deleteProject
+  "/:projectId",
+  authenticateToken,
+  isProjectManagerOrAdmin,
+  projectController.deleteProject
 );
 
 /**
@@ -160,10 +159,10 @@ router.delete(
  *         description: Thêm thành công.
  */
 router.post(
-    '/:projectId/members',
-    authenticateToken,
-    isProjectManagerOrAdmin,
-    projectController.addMember
+  "/:projectId/members",
+  authenticateToken,
+  isProjectManagerOrAdmin,
+  projectController.addMember
 );
 
 /**
@@ -179,10 +178,10 @@ router.post(
  *         description: Danh sách thành viên kèm quyền hạn.
  */
 router.get(
-    '/:projectId/members',
-    authenticateToken,
-    isProjectMember,
-    projectController.getMembers
+  "/:projectId/members",
+  authenticateToken,
+  isProjectMember,
+  projectController.getMembers
 );
 
 /**
@@ -198,10 +197,10 @@ router.get(
  *         description: Đã xóa thành viên.
  */
 router.delete(
-    '/:projectId/members/:userId',
-    authenticateToken,
-    isProjectManagerOrAdmin,
-    projectController.removeMember
+  "/:projectId/members/:userId",
+  authenticateToken,
+  isProjectManagerOrAdmin,
+  projectController.removeMember
 );
 
 /**
@@ -217,10 +216,10 @@ router.delete(
  *         description: Dữ liệu báo cáo.
  */
 router.get(
-    '/:projectId/report',
-    authenticateToken,
-    isProjectMember,
-    projectController.getReport
+  "/:projectId/report",
+  authenticateToken,
+  isProjectMember,
+  projectController.getReport
 );
 
 module.exports = router;

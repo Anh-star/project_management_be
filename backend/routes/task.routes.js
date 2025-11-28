@@ -1,11 +1,11 @@
-const express = require('express');
+const express = require("express");
 // mergeParams: true để route này có thể truy cập :projectId từ route cha
-const router = express.Router({ mergeParams: true }); 
-const { canUpdateTask } = require('../middleware/taskAuth.middleware');
-const taskController = require('../controllers/task.controller');
-const { authenticateToken } = require('../middleware/auth.middleware');
-const { isAdminOrPM } = require('../middleware/role.middleware');
-const { isProjectMember } = require('../middleware/projectAuth.middleware');
+const router = express.Router({ mergeParams: true });
+const { canUpdateTask } = require("../middleware/taskAuth.middleware");
+const taskController = require("../controllers/task.controller");
+const { authenticateToken } = require("../middleware/auth.middleware");
+const { isAdminOrPM } = require("../middleware/role.middleware");
+const { isProjectMember } = require("../middleware/projectAuth.middleware");
 
 /**
  * @swagger
@@ -65,10 +65,10 @@ const { isProjectMember } = require('../middleware/projectAuth.middleware');
  *         description: Không có quyền (không phải Admin/PM).
  */
 router.post(
-    '/',
-    authenticateToken,
-    isAdminOrPM,       // Chỉ Admin/PM mới được *tạo*
-    taskController.createTask
+  "/",
+  authenticateToken,
+  isAdminOrPM, // Chỉ Admin/PM mới được *tạo*
+  taskController.createTask
 );
 
 /**
@@ -106,10 +106,10 @@ router.post(
  *         description: Không phải thành viên của dự án.
  */
 router.get(
-    '/',
-    authenticateToken,
-    isProjectMember,   // Chỉ thành viên dự án mới được *xem*
-    taskController.getProjectTasks
+  "/",
+  authenticateToken,
+  isProjectMember, // Chỉ thành viên dự án mới được *xem*
+  taskController.getProjectTasks
 );
 
 /**
@@ -155,11 +155,11 @@ router.get(
  *         description: Công việc không tồn tại.
  */
 router.patch(
-    '/:taskId',
-    authenticateToken,
-    isProjectMember,   // 1. Phải là thành viên dự án
-    canUpdateTask,     // 2. Phải là PM hoặc Assignee
-    taskController.updateTask
+  "/:taskId",
+  authenticateToken,
+  isProjectMember, // 1. Phải là thành viên dự án
+  canUpdateTask, // 2. Phải là PM hoặc Assignee
+  taskController.updateTask
 );
 
 /**
@@ -190,10 +190,10 @@ router.patch(
  *         description: Công việc không tồn tại.
  */
 router.delete(
-    '/:taskId',
-    authenticateToken,
-    isAdminOrPM,       // Chỉ Admin/PM mới được xóa
-    taskController.deleteTask
+  "/:taskId",
+  authenticateToken,
+  isAdminOrPM, // Chỉ Admin/PM mới được xóa
+  taskController.deleteTask
 );
 
 module.exports = router;

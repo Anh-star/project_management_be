@@ -1,16 +1,16 @@
-const db = require('../config/db');
+const db = require("../config/db");
 
 // 1. ADMIN: Thấy tất cả
 const getAdminStats = async () => {
-    const projectStatsQuery = `
+  const projectStatsQuery = `
         SELECT
             COUNT(*) AS total_projects,
             COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) AS completed_projects,
             COUNT(CASE WHEN status = 'IN_PROGRESS' THEN 1 END) AS in_progress_projects
         FROM projects;
     `;
-    
-    const taskStatsQuery = `
+
+  const taskStatsQuery = `
         SELECT
             COUNT(*) AS total_tasks,
             COUNT(CASE WHEN status = 'DONE' THEN 1 END) AS completed_tasks,
@@ -18,22 +18,22 @@ const getAdminStats = async () => {
             COUNT(CASE WHEN status != 'DONE' AND due_date < NOW() THEN 1 END) AS overdue_tasks
         FROM tasks;
     `;
-    
-    const [projectRes, taskRes] = await Promise.all([
-        db.query(projectStatsQuery),
-        db.query(taskStatsQuery)
-    ]);
-    
-    return {
-        projects: projectRes.rows[0],
-        tasks: taskRes.rows[0],
-        scope: 'ADMIN'
-    };
+
+  const [projectRes, taskRes] = await Promise.all([
+    db.query(projectStatsQuery),
+    db.query(taskStatsQuery),
+  ]);
+
+  return {
+    projects: projectRes.rows[0],
+    tasks: taskRes.rows[0],
+    scope: "ADMIN",
+  };
 };
 
 // 2. PM: Thấy dự án mình TẠO + dự án mình THAM GIA
 const getPMStats = async (pmUserId) => {
-    const projectStatsQuery = `
+  const projectStatsQuery = `
         SELECT
             COUNT(DISTINCT p.id) AS total_projects,
             COUNT(DISTINCT CASE WHEN p.status = 'COMPLETED' THEN p.id END) AS completed_projects,
@@ -42,9 +42,9 @@ const getPMStats = async (pmUserId) => {
         LEFT JOIN project_members pm ON p.id = pm.project_id
         WHERE p.created_by = $1 OR pm.user_id = $1;
     `;
-    
-    // Thống kê Task: Đếm tất cả task trong các dự án đó (PM được xem hết task của dự án)
-    const taskStatsQuery = `
+
+  // Thống kê Task: Đếm tất cả task trong các dự án đó (PM được xem hết task của dự án)
+  const taskStatsQuery = `
         SELECT
             COUNT(DISTINCT t.id) AS total_tasks,
             COUNT(DISTINCT CASE WHEN t.status = 'DONE' THEN t.id END) AS completed_tasks,
@@ -55,22 +55,22 @@ const getPMStats = async (pmUserId) => {
         LEFT JOIN project_members pm ON p.id = pm.project_id
         WHERE p.created_by = $1 OR pm.user_id = $1;
     `;
-    
-    const [projectRes, taskRes] = await Promise.all([
-        db.query(projectStatsQuery, [pmUserId]),
-        db.query(taskStatsQuery, [pmUserId])
-    ]);
-    
-    return {
-        projects: projectRes.rows[0],
-        tasks: taskRes.rows[0],
-        scope: 'PROJECT_MANAGER'
-    };
+
+  const [projectRes, taskRes] = await Promise.all([
+    db.query(projectStatsQuery, [pmUserId]),
+    db.query(taskStatsQuery, [pmUserId]),
+  ]);
+
+  return {
+    projects: projectRes.rows[0],
+    tasks: taskRes.rows[0],
+    scope: "PROJECT_MANAGER",
+  };
 };
 
 // 3. MEMBER: Chỉ thấy dự án mình tham gia & Task GIAO CHO MÌNH
 const getMemberStats = async (memberUserId) => {
-    const projectStatsQuery = `
+  const projectStatsQuery = `
         SELECT
             COUNT(DISTINCT p.id) AS total_projects,
             COUNT(DISTINCT CASE WHEN p.status = 'COMPLETED' THEN p.id END) AS completed_projects,
@@ -79,8 +79,8 @@ const getMemberStats = async (memberUserId) => {
         JOIN project_members pm ON p.id = pm.project_id
         WHERE pm.user_id = $1;
     `;
-    
-    const taskStatsQuery = `
+
+  const taskStatsQuery = `
         SELECT
             COUNT(*) AS total_tasks,
             COUNT(CASE WHEN status = 'DONE' THEN 1 END) AS completed_tasks,
@@ -89,21 +89,21 @@ const getMemberStats = async (memberUserId) => {
         FROM tasks
         WHERE assignee_id = $1;
     `;
-    
-    const [projectRes, taskRes] = await Promise.all([
-        db.query(projectStatsQuery, [memberUserId]),
-        db.query(taskStatsQuery, [memberUserId])
-    ]);
-    
-    return {
-        projects: projectRes.rows[0],
-        tasks: taskRes.rows[0],
-        scope: 'MEMBER'
-    };
+
+  const [projectRes, taskRes] = await Promise.all([
+    db.query(projectStatsQuery, [memberUserId]),
+    db.query(taskStatsQuery, [memberUserId]),
+  ]);
+
+  return {
+    projects: projectRes.rows[0],
+    tasks: taskRes.rows[0],
+    scope: "MEMBER",
+  };
 };
 
 module.exports = {
-    getAdminStats,
-    getPMStats,
-    getMemberStats
+  getAdminStats,
+  getPMStats,
+  getMemberStats,
 };

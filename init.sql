@@ -48,9 +48,39 @@ CREATE TABLE tasks (
     parent_id INT REFERENCES tasks(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+    -- 1. Thêm cột is_manager vào bảng project_members
+    ALTER TABLE project_members 
+    ADD COLUMN is_manager BOOLEAN DEFAULT FALSE;
 
+
+-- 1. Tạo bảng thông báo
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    message TEXT,
+    type VARCHAR(50), -- 'ASSIGN', 'STATUS', 'OVERDUE'
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE tasks ADD COLUMN completed_at TIMESTAMP DEFAULT NULL;
+
+CREATE TABLE attachments (
+    id SERIAL PRIMARY KEY,
+    file_name VARCHAR(255) NOT NULL,   -- <--- Sửa thành 255
+    file_path TEXT NOT NULL,           -- <--- Sửa thành TEXT
+    file_type VARCHAR(255),            -- <--- Sửa thành 255
+    task_id INT REFERENCES tasks(id) ON DELETE CASCADE,
+    project_id INT REFERENCES projects(id) ON DELETE CASCADE,
+    uploaded_by INT REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Thêm cột đánh dấu đã báo quá hạn chưa (để tránh báo lặp lại) cho bảng tasks
+ALTER TABLE tasks ADD COLUMN is_overdue_notified BOOLEAN DEFAULT FALSE;
 -- (Tùy chọn) Tạo sẵn 1 tài khoản Admin mặc định
 -- Pass: 123456 (hash bcrypt mẫu)
 -- Mật khẩu là: 123456
-INSERT INTO users (username, email, password_hash, role) 
-VALUES ('admin', 'admin@example.com', '$2a$10$X7V.j/X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X', 'ADMIN');
+--INSERT INTO users (username, email, password_hash, role) 
+--VALUES ('admin', 'admin@example.com', '$2a$10$X7V.j/X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X.X', 'ADMIN');

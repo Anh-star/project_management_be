@@ -1,6 +1,6 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const authController = require('../controllers/auth.controller');
+const authController = require("../controllers/auth.controller");
 
 /**
  * @swagger
@@ -59,8 +59,7 @@ const authController = require('../controllers/auth.controller');
  *       '400':
  *         description: 'Thông tin không hợp lệ (ví dụ: email đã tồn tại).'
  */
-router.post('/register', authController.register);
-
+router.post("/register", authController.register);
 
 /**
  * @swagger
@@ -103,6 +102,6 @@ router.post('/register', authController.register);
  *       '401':
  *         description: Sai email hoặc mật khẩu.
  */
-router.post('/login', authController.login);
+router.post("/login", authController.login);
 
 module.exports = router;

@@ -1,13 +1,13 @@
 // backend/controllers/resource.controller.js
-const db = require('../config/db');
+const db = require("../config/db");
 
 const getResourceStatus = async (req, res) => {
-    try {
-        // Query này:
-        // 1. Lấy tất cả user
-        // 2. Đếm số task đang active (chưa DONE)
-        // 3. Gom danh sách các task đó lại thành mảng JSON để hiển thị chi tiết
-        const queryText = `
+  try {
+    // Query này:
+    // 1. Lấy tất cả user
+    // 2. Đếm số task đang active (chưa DONE)
+    // 3. Gom danh sách các task đó lại thành mảng JSON để hiển thị chi tiết
+    const queryText = `
             SELECT 
                 u.id, u.username, u.email, u.role,
                 COUNT(t.id) FILTER (WHERE t.status IN ('TODO', 'IN_PROGRESS', 'REVIEW')) as workload_count,
@@ -30,12 +30,12 @@ const getResourceStatus = async (req, res) => {
             ORDER BY workload_count DESC; -- Người bận nhất lên đầu
         `;
 
-        const { rows } = await db.query(queryText);
-        res.status(200).json(rows);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Lỗi lấy dữ liệu tài nguyên.' });
-    }
+    const { rows } = await db.query(queryText);
+    res.status(200).json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi lấy dữ liệu tài nguyên." });
+  }
 };
 
 module.exports = { getResourceStatus };

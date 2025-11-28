@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const dashboardController = require('../controllers/dashboard.controller');
-const { authenticateToken } = require('../middleware/auth.middleware');
+const dashboardController = require("../controllers/dashboard.controller");
+const { authenticateToken } = require("../middleware/auth.middleware");
 
 /**
  * @swagger
@@ -57,9 +57,9 @@ const { authenticateToken } = require('../middleware/auth.middleware');
  *         description: Chưa xác thực.
  */
 router.get(
-    '/',
-    authenticateToken, // Chỉ cần login là xem được
-    dashboardController.getDashboard
+  "/",
+  authenticateToken, // Chỉ cần login là xem được
+  dashboardController.getDashboard
 );
 
 module.exports = router;
