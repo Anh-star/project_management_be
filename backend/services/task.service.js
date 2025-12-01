@@ -94,7 +94,7 @@ const createTask = async (projectId, taskData, user) => {
 const updateTask = async (taskId, taskData, isAssigneeOnly) => {
   let allowedUpdates = taskData;
 
-  // 1. Phân quyền (Member chỉ sửa được status, priority)
+  // 1. Phân quyền Member
   if (isAssigneeOnly) {
     const allowedFields = ["status", "priority"];
     const restrictedUpdates = {};
@@ -102,9 +102,8 @@ const updateTask = async (taskId, taskData, isAssigneeOnly) => {
       if (taskData.hasOwnProperty(field))
         restrictedUpdates[field] = taskData[field];
     }
-    if (Object.keys(restrictedUpdates).length === 0) {
+    if (Object.keys(restrictedUpdates).length === 0)
       throw new Error("Bạn chỉ có quyền cập nhật trạng thái hoặc độ ưu tiên.");
-    }
     allowedUpdates = restrictedUpdates;
   }
 
@@ -120,22 +119,23 @@ const updateTask = async (taskId, taskData, isAssigneeOnly) => {
     const oldTask = await taskModel.findById(taskId);
     if (!oldTask) throw new Error("Công việc không tồn tại.");
 
-    // --- XỬ LÝ THỜI GIAN HOÀN THÀNH (COMPLETED_AT) ---
+    // --- LOGIC MỚI: XỬ LÝ THỜI GIAN HOÀN THÀNH ---
+    // Nếu có gửi lên status mới
     if (allowedUpdates.status) {
       if (allowedUpdates.status === "DONE" && oldTask.status !== "DONE") {
-        // Mới chuyển sang DONE -> Ghi nhận thời gian
+        // Mới chuyển sang DONE -> Lưu thời điểm hiện tại
         allowedUpdates.completed_at = new Date();
       } else if (
         allowedUpdates.status !== "DONE" &&
         oldTask.status === "DONE"
       ) {
-        // Từ DONE chuyển sang cái khác -> Xóa thời gian
+        // Từ DONE chuyển sang cái khác -> Xóa thời gian hoàn thành
         allowedUpdates.completed_at = null;
       }
     }
-    // --------------------------------------------------
+    // --------------------------------------------
 
-    // Reset cờ quá hạn nếu người dùng đổi hạn chót
+    // Reset cờ quá hạn nếu đổi hạn chót
     if (
       allowedUpdates.due_date &&
       allowedUpdates.due_date !== oldTask.due_date
@@ -143,13 +143,14 @@ const updateTask = async (taskId, taskData, isAssigneeOnly) => {
       allowedUpdates.is_overdue_notified = false;
     }
 
-    // 3. Thực hiện Update
+    // 3. Update vào DB
     const updatedTask = await taskModel.update(taskId, allowedUpdates);
 
-    // 4. Logic tự động: Revert Task Cha (Nếu task con bị làm lại)
+    // 4. Logic tự động: Revert Task Cha
     if (updatedTask.parent_id && updatedTask.status !== "DONE") {
       const parentTask = await taskModel.findById(updatedTask.parent_id);
       if (parentTask && parentTask.status === "DONE") {
+        // Task cha mở lại cũng phải xóa completed_at
         await taskModel.update(parentTask.id, {
           status: "IN_PROGRESS",
           completed_at: null,
@@ -191,7 +192,6 @@ const updateTask = async (taskId, taskData, isAssigneeOnly) => {
     throw error;
   }
 };
-
 /**
  * Lấy danh sách công việc (Hỗ trợ Lọc & Cây)
  */

@@ -172,6 +172,50 @@ const hasIncompleteChildren = async (parentId) => {
   }
 };
 
+const findAllByUserId = async (userId, role, filters = {}) => {
+  const { projectId, assigneeId } = filters;
+  let params = [];
+  let paramIdx = 1;
+
+  let queryText = `
+        SELECT t.*, p.name as project_name, u.username as assignee_name
+        FROM tasks t
+        JOIN projects p ON t.project_id = p.id
+        LEFT JOIN users u ON t.assignee_id = u.id
+    `;
+
+  // Điều kiện Join để bảo mật (Chỉ xem task của dự án mình tham gia)
+  if (role !== "ADMIN") {
+    queryText += `
+            JOIN project_members pm ON p.id = pm.project_id
+            WHERE pm.user_id = $${paramIdx++}
+        `;
+    params.push(userId);
+  } else {
+    queryText += ` WHERE 1=1 `; // Dummy condition cho Admin
+  }
+
+  // Filter theo Dự án
+  if (projectId) {
+    queryText += ` AND t.project_id = $${paramIdx++}`;
+    params.push(projectId);
+  }
+
+  // Filter theo Người được giao
+  if (assigneeId) {
+    queryText += ` AND t.assignee_id = $${paramIdx++}`;
+    params.push(assigneeId);
+  }
+
+  queryText += ` ORDER BY t.due_date ASC`;
+
+  try {
+    const { rows } = await db.query(queryText, params);
+    return rows;
+  } catch (error) {
+    throw error;
+  }
+};
 module.exports = {
   create,
   findByProjectId,
@@ -180,4 +224,5 @@ module.exports = {
   deleteById,
   countIncomplete,
   hasIncompleteChildren,
+  findAllByUserId,
 };
