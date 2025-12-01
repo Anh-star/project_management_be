@@ -9,6 +9,7 @@ const notificationModel = require("./backend/models/notification.model");
 const apiRoutes = require("./backend/routes");
 const attachmentRoutes = require("./backend/routes/attachment.routes"); // <--- 1. IMPORT ROUTE ATTACHMENT
 const calendarRoutes = require("./backend/routes/calendar.routes");
+const commentRoutes = require("./backend/routes/comment.routes");
 // Swagger
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./backend/config/swagger");
@@ -42,6 +43,7 @@ app.use("/api/v1/attachments", attachmentRoutes); // <--- Đăng ký API Upload
 app.use("/api/v1", apiRoutes);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/v1/calendar", calendarRoutes);
+app.use("/api/v1/tasks/:taskId/comments", commentRoutes);
 // ==========================================
 // 4. MIDDLEWARE PHỤC VỤ FRONTEND (STATIC)
 // ==========================================

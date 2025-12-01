@@ -77,6 +77,14 @@ CREATE TABLE attachments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE comments (
+    id SERIAL PRIMARY KEY,
+    task_id INT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 2. Thêm cột đánh dấu đã báo quá hạn chưa (để tránh báo lặp lại) cho bảng tasks
 ALTER TABLE tasks ADD COLUMN is_overdue_notified BOOLEAN DEFAULT FALSE;
 -- (Tùy chọn) Tạo sẵn 1 tài khoản Admin mặc định
