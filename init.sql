@@ -85,6 +85,10 @@ CREATE TABLE comments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE comments 
+ADD COLUMN parent_id INT REFERENCES comments(id) ON DELETE CASCADE;
+
+ALTER TABLE comments ADD COLUMN image_url TEXT;
 -- 2. Thêm cột đánh dấu đã báo quá hạn chưa (để tránh báo lặp lại) cho bảng tasks
 ALTER TABLE tasks ADD COLUMN is_overdue_notified BOOLEAN DEFAULT FALSE;
 -- (Tùy chọn) Tạo sẵn 1 tài khoản Admin mặc định

@@ -125,6 +125,13 @@ const deleteById = async (userId) => {
   return rows[0];
 };
 
+const findByUsername = async (username) => {
+  const { rows } = await db.query("SELECT * FROM users WHERE username = $1", [
+    username,
+  ]);
+  return rows[0];
+};
+
 module.exports = {
   create,
   findByEmail,
@@ -132,4 +139,5 @@ module.exports = {
   findAll,
   update,
   deleteById,
+  findByUsername,
 };
