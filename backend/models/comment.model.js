@@ -50,7 +50,15 @@ const findById = async (commentId) => {
 };
 
 const deleteById = async (commentId) => {
-  await db.query("DELETE FROM comments WHERE id = $1", [commentId]);
+  const query = `
+        UPDATE comments 
+        SET 
+            content = 'Tin nhắn đã bị xóa', -- Ghi đè nội dung
+            image_url = NULL,              -- Xóa ảnh (tiết kiệm chỗ)
+            is_deleted = TRUE              -- Đánh dấu
+        WHERE id = $1
+    `;
+  await db.query(query, [commentId]);
 };
 
 module.exports = { create, getByTaskId, deleteById, findById };
