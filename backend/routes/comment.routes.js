@@ -10,7 +10,6 @@ router.use(authenticateToken);
 
 router.get("/", commentController.getTaskComments);
 
-// --- SỬA TẠI ĐÂY ---
 // Thêm upload.single('file') vào giữa.
 // Nó sẽ giúp biến đổi FormData thành req.body (text) và req.file (ảnh)
 router.post("/", upload.single("file"), commentController.addComment);

@@ -91,6 +91,17 @@ ADD COLUMN parent_id INT REFERENCES comments(id) ON DELETE CASCADE;
 ALTER TABLE comments ADD COLUMN image_url TEXT;
 -- 2. Thêm cột đánh dấu đã báo quá hạn chưa (để tránh báo lặp lại) cho bảng tasks
 ALTER TABLE tasks ADD COLUMN is_overdue_notified BOOLEAN DEFAULT FALSE;
+
+-- 1. Xóa ràng buộc khóa ngoại cũ (đang là Cascade)
+ALTER TABLE comments DROP CONSTRAINT IF EXISTS comments_parent_id_fkey;
+
+-- 2. Thêm ràng buộc mới (Set Null)
+ALTER TABLE comments 
+ADD CONSTRAINT comments_parent_id_fkey 
+FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE SET NULL;
+
+ALTER TABLE comments ADD COLUMN is_deleted BOOLEAN DEFAULT FALSE;
+
 -- (Tùy chọn) Tạo sẵn 1 tài khoản Admin mặc định
 -- Pass: 123456 (hash bcrypt mẫu)
 -- Mật khẩu là: 123456
